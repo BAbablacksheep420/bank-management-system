@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apex Core Bank | CS209 DBMS</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand-section">
+      <div class="brand-logo-icon">DTU</div>
+      <div>
+        <div class="brand-title">APEX CORE BANK</div>
+        <div class="brand-subtitle">CS209 DBMS Engine</div>
+      </div>
+    </div>
+
+    <ul class="nav-links">
+      <li class="nav-item active" data-tab="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        <span>Dashboard</span>
+      </li>
+      <li class="nav-item" data-tab="customers">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        <span>Customers</span>
+      </li>
+      <li class="nav-item" data-tab="accounts">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+        <span>Accounts & Transact</span>
+      </li>
+      <li class="nav-item" data-tab="transactions">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+        <span>Transactions Ledger</span>
+      </li>
+      <li class="nav-item" data-tab="cards">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+        <span>Card Center</span>
+      </li>
+      <li class="nav-item" data-tab="loans">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+        <span>Loans & Credit</span>
+      </li>
+      <li class="nav-item" data-tab="branches">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 21h18"></path><path d="M5 21V7l8-4v18"></path><path d="M19 21V11l-6-4"></path><path d="M9 9h1"></path><path d="M9 13h1"></path><path d="M9 17h1"></path></svg>
+        <span>Branches & Staff</span>
+      </li>
+      <li class="nav-item" data-tab="sql-studio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+        <span>SQL Query Studio</span>
+      </li>
+      <li class="nav-item" data-tab="schema-view">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="3" width="20" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+        <span>ER Diagram & Schema</span>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div class="system-badge">
+        <div class="status-dot"></div>
+        <span>SQLite Relational Engine Active</span>
+      </div>
+      <div style="font-size: 11px; color: var(--text-dim); margin-top: 6px;">
+        Arnav Gupta & Lavya Yadav
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Wrapper -->
+  <div class="main-wrapper">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="page-headline">
+        <h1 id="page-title">Executive Banking Dashboard</h1>
+        <p id="page-subtitle">Real-time core ledger monitoring and database operations</p>
+      </div>
+
+      <div class="topbar-actions">
+        <a href="/api/export/sql" class="btn btn-secondary btn-sm" download="dtu_bank_system_mysql.sql">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Export MySQL Script
+        </a>
+        <button class="btn btn-primary btn-sm" onclick="openTransferModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+          Instant Fund Transfer
+        </button>
+      </div>
+    </header>
+
+    <!-- Body -->
+    <main class="content-body">
+
+      <!-- 1. DASHBOARD TAB -->
+      <section id="tab-dashboard" class="tab-pane active">
+        <!-- Metrics -->
+        <div class="metrics-grid">
+          <div class="metric-card" style="--accent-color: #10b981;">
+            <div class="metric-header">
+              <span class="metric-title">Total Deposits</span>
+              <div class="metric-icon-box">₹</div>
+            </div>
+            <div class="metric-value" id="kpi-total-balance">₹0.00</div>
+            <div class="metric-sub" id="kpi-accounts-count">0 Active Accounts</div>
+          </div>
+
+          <div class="metric-card" style="--accent-color: #6366f1;">
+            <div class="metric-header">
+              <span class="metric-title">Total Customers</span>
+              <div class="metric-icon-box">👥</div>
+            </div>
+            <div class="metric-value" id="kpi-customers-count">0</div>
+            <div class="metric-sub">Across 5 Primary Branches</div>
+          </div>
+
+          <div class="metric-card" style="--accent-color: #f59e0b;">
+            <div class="metric-header">
+              <span class="metric-title">Active Loan Book</span>
+              <div class="metric-icon-box">📈</div>
+            </div>
+            <div class="metric-value" id="kpi-loan-balance">₹0.00</div>
+            <div class="metric-sub" id="kpi-loans-count">0 Running Facilities</div>
+          </div>
+
+          <div class="metric-card" style="--accent-color: #06b6d4;">
+            <div class="metric-header">
+              <span class="metric-title">Active Cards Issued</span>
+              <div class="metric-icon-box">💳</div>
+            </div>
+            <div class="metric-value" id="kpi-active-cards">0</div>
+            <div class="metric-sub" id="kpi-txn-count">0 Ledger Transactions</div>
+          </div>
+        </div>
+
+        <!-- Quick Actions & Overview -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 28px;">
+          <!-- Recent Transactions -->
+          <div class="glass-panel" style="margin-bottom: 0;">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                Real-Time Transaction Stream
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="switchTab('transactions')">View All</button>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Ref ID</th>
+                    <th>Account & Customer</th>
+                    <th>Category</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Running Bal</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboard-recent-txns">
+                  <tr><td colspan="6" style="text-align:center; color: var(--text-muted); padding: 30px;">Loading stream...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Account Distribution & Quick Controls -->
+          <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div class="glass-panel" style="margin-bottom: 0;">
+              <div class="panel-header">
+                <div class="panel-title">Quick Operations</div>
+              </div>
+              <div style="padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+                <button class="btn btn-primary" onclick="openDepositWithdrawModal('deposit')">
+                  + Cash / Cheque Deposit
+                </button>
+                <button class="btn btn-secondary" onclick="openDepositWithdrawModal('withdraw')">
+                  - ATM / Cash Withdrawal
+                </button>
+                <button class="btn btn-indigo" onclick="openAccountModal()">
+                  + Open New Bank Account
+                </button>
+                <button class="btn btn-secondary" onclick="openCustomerModal()">
+                  + Register Customer Profile
+                </button>
+              </div>
+            </div>
+
+            <!-- Account breakdown -->
+            <div class="glass-panel" style="margin-bottom: 0; flex: 1;">
+              <div class="panel-header">
+                <div class="panel-title">Portfolio Distribution</div>
+              </div>
+              <div id="account-type-distribution" style="padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+                <!-- Filled dynamically -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Branch Performance -->
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div class="panel-title">Branch Network Infrastructure</div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Branch Code</th>
+                  <th>Branch Name</th>
+                  <th>Staff Headcount</th>
+                  <th>Customer Accounts Managed</th>
+                </tr>
+              </thead>
+              <tbody id="dashboard-branches-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. CUSTOMERS TAB -->
+      <section id="tab-customers" class="tab-pane">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div class="panel-title">Customer Directory</div>
+            <div class="panel-actions">
+              <input type="text" id="customer-search-input" class="form-control" placeholder="Search by name, ID, email..." style="width: 260px;" oninput="fetchCustomers()">
+              <button class="btn btn-primary btn-sm" onclick="openCustomerModal()">+ Register Customer</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Customer ID</th>
+                  <th>Full Name</th>
+                  <th>Contact Info</th>
+                  <th>Credit Score</th>
+                  <th>Relationship Manager</th>
+                  <th>Accounts</th>
+                  <th>Total Balance</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="customers-table-body">
+                <tr><td colspan="8" style="text-align:center; padding: 30px;">Loading customer records...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. ACCOUNTS TAB -->
+      <section id="tab-accounts" class="tab-pane">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div class="panel-title">Core Accounts Ledger</div>
+            <div class="panel-actions">
+              <input type="text" id="account-search-input" class="form-control" placeholder="Search account number or holder..." style="width: 260px;" oninput="fetchAccounts()">
+              <button class="btn btn-secondary btn-sm" onclick="openDepositWithdrawModal('deposit')">Deposit / Withdraw</button>
+              <button class="btn btn-indigo btn-sm" onclick="openTransferModal()">Transfer</button>
+              <button class="btn btn-primary btn-sm" onclick="openAccountModal()">+ New Account</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Account No</th>
+                  <th>Customer</th>
+                  <th>Type</th>
+                  <th>Balance</th>
+                  <th>Overdraft Limit</th>
+                  <th>Opening Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="accounts-table-body">
+                <tr><td colspan="8" style="text-align:center; padding: 30px;">Loading accounts...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. TRANSACTIONS TAB -->
+      <section id="tab-transactions" class="tab-pane">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div class="panel-title">Financial Transaction Audit Ledger</div>
+            <div class="panel-actions">
+              <select id="txn-filter-type" class="form-control" style="width: 140px;" onchange="fetchTransactions()">
+                <option value="">All Types</option>
+                <option value="credit">Credits (Income)</option>
+                <option value="debit">Debits (Expense)</option>
+              </select>
+              <button class="btn btn-primary btn-sm" onclick="openTransferModal()">New Transaction</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Transaction Ref</th>
+                  <th>Account Number</th>
+                  <th>Customer</th>
+                  <th>Category</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Running Balance</th>
+                  <th>Description</th>
+                  <th>Timestamp</th>
+                </tr>
+              </thead>
+              <tbody id="transactions-table-body">
+                <tr><td colspan="9" style="text-align:center; padding: 30px;">Loading transactions...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. CARDS TAB -->
+      <section id="tab-cards" class="tab-pane">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <div>
+            <h2 style="font-size: 18px; font-weight: 700;">Payment Cards Portfolio</h2>
+            <p style="font-size: 13px; color: var(--text-muted);">Debit, Credit, and Prepaid cards linked to banking accounts</p>
+          </div>
+          <button class="btn btn-primary" onclick="openCardModal()">+ Issue New Card</button>
+        </div>
+
+        <div class="card-preview-grid" id="cards-container">
+          <!-- Cards rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- 6. LOANS TAB -->
+      <section id="tab-loans" class="tab-pane">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div class="panel-title">Credit & Lending Facilities</div>
+            <div class="panel-actions">
+              <button class="btn btn-secondary btn-sm" onclick="openRepayLoanModal()">Repay Loan Installment</button>
+              <button class="btn btn-primary btn-sm" onclick="openLoanModal()">+ Sanction New Loan</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Loan No</th>
+                  <th>Customer</th>
+                  <th>Category</th>
+                  <th>Principal</th>
+                  <th>Rate</th>
+                  <th>Term</th>
+                  <th>Monthly EMI</th>
+                  <th>Outstanding</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="loans-table-body">
+                <tr><td colspan="10" style="text-align:center; padding: 30px;">Loading credit facilities...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. BRANCHES & STAFF TAB -->
+      <section id="tab-branches" class="tab-pane">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div class="panel-title">Branch Network</div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Branch Code</th>
+                  <th>Branch Name</th>
+                  <th>Parent Institution</th>
+                  <th>Address</th>
+                  <th>Phone</th>
+                  <th>Branch Manager</th>
+                  <th>Hours</th>
+                  <th>Staff Size</th>
+                </tr>
+              </thead>
+              <tbody id="branches-list-table"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div class="panel-title">Banking Personnel & Relationship Managers</div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Emp ID</th>
+                  <th>Full Name</th>
+                  <th>Department</th>
+                  <th>Position</th>
+                  <th>Branch</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Monthly Salary</th>
+                </tr>
+              </thead>
+              <tbody id="employees-list-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8. SQL QUERY STUDIO TAB -->
+      <section id="tab-sql-studio" class="tab-pane">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+              Interactive SQL Console
+            </div>
+            <div class="panel-actions">
+              <button class="btn btn-primary btn-sm" onclick="executeSQLQuery()">
+                ▶ Run Query
+              </button>
+            </div>
+          </div>
+
+          <div style="padding: 20px;">
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">PRESET REPORT QUERIES (DTU CS209 DBMS Spec):</div>
+            <div class="sql-presets">
+              <span class="preset-chip" onclick="setPresetQuery(1)">Record count per table (Union query from slide 16)</span>
+              <span class="preset-chip" onclick="setPresetQuery(2)">Top account balances with customer profiles</span>
+              <span class="preset-chip" onclick="setPresetQuery(3)">Branch-wise total assets and employee count</span>
+              <span class="preset-chip" onclick="setPresetQuery(4)">Outstanding loan balances by loan type</span>
+              <span class="preset-chip" onclick="setPresetQuery(5)">Active credit cards with limit > ₹100,000</span>
+              <span class="preset-chip" onclick="setPresetQuery(6)">Recent high-value transactions (> ₹50,000)</span>
+            </div>
+
+            <div class="sql-terminal-box">
+              <div class="sql-editor-header">
+                <span style="font-family: var(--font-mono); font-size: 12px; color: #8b949e;">Query Editor (SQLite 3 Standard Engine)</span>
+                <span id="query-timer" style="font-family: var(--font-mono); font-size: 11px; color: var(--accent-primary);">Ready</span>
+              </div>
+              <textarea id="sql-input" class="sql-textarea" spellcheck="false">SELECT 'companies' AS table_name, COUNT(*) AS record_count FROM companies
+UNION ALL
+SELECT 'branches', COUNT(*) FROM branches
+UNION ALL
+SELECT 'employees', COUNT(*) FROM employees
+UNION ALL
+SELECT 'customers', COUNT(*) FROM customers
+UNION ALL
+SELECT 'account_types', COUNT(*) FROM account_types
+UNION ALL
+SELECT 'accounts', COUNT(*) FROM accounts
+UNION ALL
+SELECT 'transaction_categories', COUNT(*) FROM transaction_categories
+UNION ALL
+SELECT 'transactions', COUNT(*) FROM transactions
+UNION ALL
+SELECT 'loans', COUNT(*) FROM loans
+UNION ALL
+SELECT 'cards', COUNT(*) FROM cards;</textarea>
+            </div>
+
+            <div id="sql-results-container" class="table-responsive" style="max-height: 400px; border: 1px solid var(--border-color); border-radius: var(--radius-md); display: none;">
+              <table class="data-table" id="sql-results-table">
+                <thead id="sql-results-head"></thead>
+                <tbody id="sql-results-body"></tbody>
+              </table>
+            </div>
+            <div id="sql-error-box" style="display: none; padding: 14px; background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 8px; color: #f43f5e; font-size: 13px; font-family: var(--font-mono); margin-top: 12px;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. SCHEMA & ER DIAGRAM TAB -->
+      <section id="tab-schema-view" class="tab-pane">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div class="panel-title">Relational Entity-Relationship (ER) Schema</div>
+            <span style="font-size: 12px; color: var(--accent-primary);">10 Tables • Normalized 3NF Schema</span>
+          </div>
+          <div class="er-container">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px;">
+              
+              <!-- companies -->
+              <div class="er-table-card">
+                <div class="er-table-header">
+                  <span>companies</span>
+                  <span>Parent Entity</span>
+                </div>
+                <div class="er-field"><span class="er-pk">🔑 company_code</span><span>VARCHAR(10)</span></div>
+                <div class="er-field"><span>company_name</span><span>VARCHAR(100)</span></div>
+                <div class="er-field"><span>headquarters_address</span><span>TEXT</span></div>
+                <div class="er-field"><span>phone</span><span>VARCHAR(20)</span></div>
+                <div class="er-field"><span>established_date</span><span>DATE</span></div>
+                <div class="er-field"><span>total_assets</span><span>DECIMAL(15,2)</span></div>
+                <div class="er-field"><span>created_at</span><span>TIMESTAMP</span></div>
+              </div>
+
+              <!-- branches -->
+              <div class="er-table-card">
+                <div class="er-table-header">
+                  <span>branches</span>
+                  <span>Branch Network</span>
+                </div>
+                <div class="er-field"><span class="er-pk">🔑 branch_code</span><span>VARCHAR(15)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 company_code</span><span>VARCHAR(10)</span></div>
+                <div class="er-field"><span>branch_name</span><span>VARCHAR(100)</span></div>
+                <div class="er-field"><span>address</span><span>TEXT</span></div>
+                <div class="er-field"><span>manager_name</span><span>VARCHAR(100)</span></div>
+                <div class="er-field"><span>opening_hours</span><span>TIME</span></div>
+                <div class="er-field"><span>closing_hours</span><span>TIME</span></div>
+              </div>
+
+              <!-- employees -->
+              <div class="er-table-card">
+                <div class="er-table-header">
+                  <span>employees</span>
+                  <span>Bank Staff</span>
+                </div>
+                <div class="er-field"><span class="er-pk">🔑 employee_id</span><span>VARCHAR(10)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 branch_code</span><span>VARCHAR(15)</span></div>
+                <div class="er-field"><span>first_name, last_name</span><span>VARCHAR(50)</span></div>
+                <div class="er-field"><span>email (UNIQUE)</span><span>VARCHAR(100)</span></div>
+                <div class="er-field"><span>position</span><span>VARCHAR(50)</span></div>
+                <div class="er-field"><span>salary</span><span>DECIMAL(10,2)</span></div>
+                <div class="er-field"><span>department</span><span>VARCHAR(50)</span></div>
+              </div>
+
+              <!-- account_types -->
+              <div class="er-table-card">
+                <div class="er-table-header">
+                  <span>account_types</span>
+                  <span>Product Metadata</span>
+                </div>
+                <div class="er-field"><span class="er-pk">🔑 account_type_code</span><span>VARCHAR(10)</span></div>
+                <div class="er-field"><span>type_name</span><span>VARCHAR(50)</span></div>
+                <div class="er-field"><span>minimum_balance</span><span>DECIMAL(10,2)</span></div>
+                <div class="er-field"><span>interest_rate</span><span>DECIMAL(5,4)</span></div>
+                <div class="er-field"><span>allows_overdraft</span><span>TINYINT(1)</span></div>
+              </div>
+
+              <!-- customers -->
+              <div class="er-table-card">
+                <div class="er-table-header">
+                  <span>customers</span>
+                  <span>Primary Actors</span>
+                </div>
+                <div class="er-field"><span class="er-pk">🔑 customer_id</span><span>VARCHAR(10)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 relationship_manager_id</span><span>VARCHAR(10)</span></div>
+                <div class="er-field"><span>first_name, last_name</span><span>VARCHAR(50)</span></div>
+                <div class="er-field"><span>email (UNIQUE)</span><span>VARCHAR(100)</span></div>
+                <div class="er-field"><span>id_number (UNIQUE)</span><span>VARCHAR(50)</span></div>
+                <div class="er-field"><span>credit_score</span><span>DECIMAL(4,0)</span></div>
+                <div class="er-field"><span>registration_date</span><span>DATE</span></div>
+              </div>
+
+              <!-- accounts -->
+              <div class="er-table-card">
+                <div class="er-table-header">
+                  <span>accounts</span>
+                  <span>Core Accounts</span>
+                </div>
+                <div class="er-field"><span class="er-pk">🔑 account_number</span><span>VARCHAR(20)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 customer_id</span><span>VARCHAR(10)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 account_type_code</span><span>VARCHAR(10)</span></div>
+                <div class="er-field"><span>balance</span><span>DECIMAL(15,2)</span></div>
+                <div class="er-field"><span>status</span><span>ENUM(active...)</span></div>
+                <div class="er-field"><span>overdraft_limit</span><span>DECIMAL(10,2)</span></div>
+              </div>
+
+              <!-- transactions -->
+              <div class="er-table-card">
+                <div class="er-table-header">
+                  <span>transactions</span>
+                  <span>Financial Ledger</span>
+                </div>
+                <div class="er-field"><span class="er-pk">🔑 transaction_reference</span><span>VARCHAR(20)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 account_number</span><span>VARCHAR(20)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 category_code</span><span>VARCHAR(10)</span></div>
+                <div class="er-field"><span>transaction_type</span><span>ENUM(credit, debit)</span></div>
+                <div class="er-field"><span>amount</span><span>DECIMAL(15,2)</span></div>
+                <div class="er-field"><span>running_balance</span><span>DECIMAL(15,2)</span></div>
+                <div class="er-field"><span>transaction_date</span><span>DATETIME</span></div>
+              </div>
+
+              <!-- cards -->
+              <div class="er-table-card">
+                <div class="er-table-header">
+                  <span>cards</span>
+                  <span>Payment Instruments</span>
+                </div>
+                <div class="er-field"><span class="er-pk">🔑 card_id</span><span>VARCHAR(20)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 customer_id</span><span>VARCHAR(10)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 linked_account_number</span><span>VARCHAR(20)</span></div>
+                <div class="er-field"><span>card_number_masked</span><span>VARCHAR(255)</span></div>
+                <div class="er-field"><span>card_type</span><span>ENUM(debit/credit)</span></div>
+                <div class="er-field"><span>expiry_date</span><span>DATE</span></div>
+                <div class="er-field"><span>credit_limit</span><span>DECIMAL(10,2)</span></div>
+              </div>
+
+              <!-- loans -->
+              <div class="er-table-card">
+                <div class="er-table-header">
+                  <span>loans</span>
+                  <span>Credit Liabilities</span>
+                </div>
+                <div class="er-field"><span class="er-pk">🔑 loan_number</span><span>VARCHAR(20)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 customer_id</span><span>VARCHAR(10)</span></div>
+                <div class="er-field"><span>loan_type</span><span>ENUM(...)</span></div>
+                <div class="er-field"><span>principal_amount</span><span>DECIMAL(15,2)</span></div>
+                <div class="er-field"><span>monthly_payment</span><span>DECIMAL(10,2)</span></div>
+                <div class="er-field"><span>outstanding_balance</span><span>DECIMAL(15,2)</span></div>
+                <div class="er-field"><span>status</span><span>ENUM(running...)</span></div>
+              </div>
+
+              <!-- transaction_categories -->
+              <div class="er-table-card">
+                <div class="er-table-header">
+                  <span>transaction_categories</span>
+                  <span>Taxonomy</span>
+                </div>
+                <div class="er-field"><span class="er-pk">🔑 category_code</span><span>VARCHAR(10)</span></div>
+                <div class="er-field"><span>category_name</span><span>VARCHAR(50)</span></div>
+                <div class="er-field"><span>category_type</span><span>ENUM(income, expense)</span></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODALS -->
+
+  <!-- Modal: Transfer Funds -->
+  <div class="modal-overlay" id="modal-transfer">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">Instant Fund Transfer (Double-Entry Atomic Transaction)</h3>
+        <button class="modal-close" onclick="closeModal('modal-transfer')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Source Account (Debited)</label>
+          <select id="transfer-src-account" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Destination Account (Credited)</label>
+          <select id="transfer-dst-account" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Transfer Amount (INR ₹)</label>
+          <input type="number" id="transfer-amount" class="form-control" placeholder="e.g. 5000" min="1" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Transaction Remarks</label>
+          <input type="text" id="transfer-desc" class="form-control" placeholder="Vendor settlement / gift / fee">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-transfer')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitFundTransfer()">Execute Transfer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Deposit / Withdraw -->
+  <div class="modal-overlay" id="modal-deposit-withdraw">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title" id="deposit-withdraw-title">Deposit / Withdraw Funds</h3>
+        <button class="modal-close" onclick="closeModal('modal-deposit-withdraw')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="dw-action" value="deposit">
+        <div class="form-group">
+          <label class="form-label">Target Account</label>
+          <select id="dw-account" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Amount (INR ₹)</label>
+          <input type="number" id="dw-amount" class="form-control" placeholder="e.g. 10000" min="1" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select id="dw-category" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description / Slip Remarks</label>
+          <input type="text" id="dw-desc" class="form-control" placeholder="Teller cash slip / branch deposit">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-deposit-withdraw')">Cancel</button>
+        <button class="btn btn-primary" id="dw-submit-btn" onclick="submitDepositWithdraw()">Execute Transaction</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Open Account -->
+  <div class="modal-overlay" id="modal-account">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">Open New Bank Account</h3>
+        <button class="modal-close" onclick="closeModal('modal-account')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Customer Profile</label>
+          <select id="newacc-customer" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Account Type</label>
+          <select id="newacc-type" class="form-control"></select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Initial Deposit (₹)</label>
+            <input type="number" id="newacc-deposit" class="form-control" placeholder="0.00" value="5000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Overdraft Facility (₹)</label>
+            <input type="number" id="newacc-overdraft" class="form-control" placeholder="0.00" value="0">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-account')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitNewAccount()">Open Account</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Register Customer -->
+  <div class="modal-overlay" id="modal-customer">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">Register New Customer Profile</h3>
+        <button class="modal-close" onclick="closeModal('modal-customer')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">First Name *</label>
+            <input type="text" id="cust-fname" class="form-control" placeholder="Aarav">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name *</label>
+            <input type="text" id="cust-lname" class="form-control" placeholder="Sharma">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Email Address *</label>
+            <input type="email" id="cust-email" class="form-control" placeholder="user@gmail.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone *</label>
+            <input type="text" id="cust-phone" class="form-control" placeholder="+91-9876543210">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Date of Birth *</label>
+            <input type="date" id="cust-dob" class="form-control" value="2000-01-01">
+          </div>
+          <div class="form-group">
+            <label class="form-label">National ID / Aadhaar *</label>
+            <input type="text" id="cust-idnum" class="form-control" placeholder="AADH987654321">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Credit Score</label>
+            <input type="number" id="cust-cscore" class="form-control" placeholder="300-900" value="750">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Assigned RM</label>
+            <select id="cust-rm" class="form-control"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Residential Address</label>
+          <textarea id="cust-address" class="form-control" rows="2" placeholder="Street, City, Postal Code"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-customer')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitNewCustomer()">Register Profile</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Issue Card -->
+  <div class="modal-overlay" id="modal-card">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">Issue Payment Card</h3>
+        <button class="modal-close" onclick="closeModal('modal-card')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Account to Link</label>
+          <select id="card-account" class="form-control"></select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Card Type</label>
+            <select id="card-type" class="form-control">
+              <option value="debit">Debit Card</option>
+              <option value="credit">Credit Card</option>
+              <option value="prepaid">Prepaid Card</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Credit Limit (if Credit Card)</label>
+            <input type="number" id="card-limit" class="form-control" placeholder="0" value="0">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-card')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitIssueCard()">Issue Card</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Sanction Loan -->
+  <div class="modal-overlay" id="modal-loan">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">Sanction Credit / Loan Facility</h3>
+        <button class="modal-close" onclick="closeModal('modal-loan')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Borrower Customer</label>
+          <select id="loan-customer" class="form-control"></select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Loan Type</label>
+            <select id="loan-type" class="form-control">
+              <option value="personal">Personal Loan</option>
+              <option value="home">Home Mortgage</option>
+              <option value="car">Vehicle / Auto Loan</option>
+              <option value="education">Education Loan</option>
+              <option value="business">Commercial Business Loan</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Principal Amount (₹)</label>
+            <input type="number" id="loan-principal" class="form-control" placeholder="500000" value="500000">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Annual Interest Rate (e.g. 0.085 for 8.5%)</label>
+            <input type="number" id="loan-rate" class="form-control" step="0.001" placeholder="0.085" value="0.085">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tenure (Months)</label>
+            <input type="number" id="loan-tenure" class="form-control" placeholder="36" value="36">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-loan')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitSanctionLoan()">Sanction Loan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Repay Loan -->
+  <div class="modal-overlay" id="modal-loan-repay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">Repay Loan Installment</h3>
+        <button class="modal-close" onclick="closeModal('modal-loan-repay')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Select Loan Facility</label>
+          <select id="repay-loan-num" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Payment Amount (₹)</label>
+          <input type="number" id="repay-loan-amount" class="form-control" placeholder="e.g. 15000" min="1" step="0.01">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-loan-repay')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitLoanRepayment()">Submit Repayment</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Customer Profile Inspection -->
+  <div class="modal-overlay" id="modal-customer-detail">
+    <div class="modal-box" style="max-width: 720px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="cust-detail-title">Customer Dossier</h3>
+        <button class="modal-close" onclick="closeModal('modal-customer-detail')">&times;</button>
+      </div>
+      <div class="modal-body" id="cust-detail-body">
+        <!-- Rendered dynamically -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-customer-detail')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-box"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
