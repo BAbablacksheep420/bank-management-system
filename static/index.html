@@ -3,18 +3,62 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Apex Core Bank | CS209 DBMS</title>
+  <title>Core Banking Platform | Multi-Bank CS209 DBMS</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
+  <!-- Operator Sign-In / Role Switcher Overlay -->
+  <div class="auth-overlay active" id="auth-overlay">
+    <div class="auth-card">
+      <div class="auth-form-pane">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+          <div class="brand-logo-icon">DTU</div>
+          <div>
+            <div style="font-size:17px; font-weight:800;">MULTI-BANK CORE DBMS</div>
+            <div style="font-size:11px; color:var(--accent-primary); font-weight:600; text-transform:uppercase;">Operator Access Gate (RBAC)</div>
+          </div>
+        </div>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:18px; line-height:1.5;">
+          Sign in as any authorized banking operator — Teller, Relationship Manager, Credit Analyst, Branch Manager, Bank Admin, Auditor, or Consortium Super Admin.
+        </p>
+        <form onsubmit="submitLogin(event)">
+          <div class="form-group">
+            <label class="form-label">Operator Username</label>
+            <input type="text" id="login-username" class="form-control" placeholder="e.g. amit.teller" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+          </div>
+          <div id="login-error-msg" style="display:none; color:#f43f5e; font-size:12px; margin-bottom:12px;"></div>
+          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Sign In to Core Engine</button>
+        </form>
+        <button id="auth-cancel-btn" class="btn btn-secondary" style="width:100%; justify-content:center; margin-top:10px; display:none;" onclick="closeAuthOverlay()">Cancel & Stay Signed In</button>
+      </div>
+
+      <div class="auth-presets-pane">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-main);">1-Click Operator & Multi-Bank Presets</div>
+          <span style="font-size:11px; color:var(--text-muted);">Live DB Auth + Audit</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+          Switch between non-manager operators and separate banks to verify permission scoping and audit logging.
+        </div>
+        <div class="demo-role-grid" id="demo-role-presets">
+          <div style="color:var(--text-muted); font-size:12px;">Loading operator accounts...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="brand-section">
-      <div class="brand-logo-icon">DTU</div>
+      <div class="brand-logo-icon" id="sidebar-logo-short">ALL</div>
       <div>
-        <div class="brand-title">APEX CORE BANK</div>
-        <div class="brand-subtitle">CS209 DBMS Engine</div>
+        <div class="brand-title" id="sidebar-brand-title">CORE BANKING</div>
+        <div class="brand-subtitle" id="sidebar-brand-subtitle">Multi-Bank CS209</div>
       </div>
     </div>
 
@@ -47,6 +91,14 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 21h18"></path><path d="M5 21V7l8-4v18"></path><path d="M19 21V11l-6-4"></path><path d="M9 9h1"></path><path d="M9 13h1"></path><path d="M9 17h1"></path></svg>
         <span>Branches & Staff</span>
       </li>
+      <li class="nav-item" data-tab="banks">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 2 7 22 7 12 2"></polygon><line x1="4" y1="10" x2="4" y2="18"></line><line x1="10" y1="10" x2="10" y2="18"></line><line x1="14" y1="10" x2="14" y2="18"></line><line x1="20" y1="10" x2="20" y2="18"></line><line x1="2" y1="21" x2="22" y2="21"></line></svg>
+        <span>Multi-Bank Registry</span>
+      </li>
+      <li class="nav-item" data-tab="rbac-audit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        <span>Access Control & Audit</span>
+      </li>
       <li class="nav-item" data-tab="sql-studio">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
         <span>SQL Query Studio</span>
@@ -60,7 +112,7 @@
     <div class="sidebar-footer">
       <div class="system-badge">
         <div class="status-dot"></div>
-        <span>SQLite Relational Engine Active</span>
+        <span>Multi-Tenant RBAC Active</span>
       </div>
       <div style="font-size: 11px; color: var(--text-dim); margin-top: 6px;">
         Arnav Gupta & Lavya Yadav
@@ -74,17 +126,27 @@
     <header class="topbar">
       <div class="page-headline">
         <h1 id="page-title">Executive Banking Dashboard</h1>
-        <p id="page-subtitle">Real-time core ledger monitoring and database operations</p>
+        <p id="page-subtitle">Real-time multi-bank ledger monitoring and role-based operations</p>
       </div>
 
       <div class="topbar-actions">
+        <select id="bank-context-select" class="bank-select-pill" onchange="onBankContextChange()" title="Active Bank Context">
+          <option value="ALL">All Banks (Consortium)</option>
+        </select>
+
+        <div class="operator-pill">
+          <span id="operator-pill-name" style="font-weight:600;">Not Signed In</span>
+          <span id="operator-pill-role" class="role-chip">-</span>
+          <button class="btn btn-secondary btn-sm" style="padding:3px 9px; font-size:11px;" onclick="openAuthOverlay(true)">Switch</button>
+        </div>
+
         <a href="/api/export/sql" class="btn btn-secondary btn-sm" download="dtu_bank_system_mysql.sql">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          Export MySQL Script
+          MySQL
         </a>
-        <button class="btn btn-primary btn-sm" onclick="openTransferModal()">
+        <button class="btn btn-primary btn-sm" data-perm="can_transact" onclick="openTransferModal()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
-          Instant Fund Transfer
+          Transfer
         </button>
       </div>
     </header>
@@ -94,12 +156,11 @@
 
       <!-- 1. DASHBOARD TAB -->
       <section id="tab-dashboard" class="tab-pane active">
-        <!-- Metrics -->
         <div class="metrics-grid">
           <div class="metric-card" style="--accent-color: #10b981;">
             <div class="metric-header">
               <span class="metric-title">Total Deposits</span>
-              <div class="metric-icon-box">₹</div>
+              <div class="metric-icon-box" id="kpi-currency-symbol">₹</div>
             </div>
             <div class="metric-value" id="kpi-total-balance">₹0.00</div>
             <div class="metric-sub" id="kpi-accounts-count">0 Active Accounts</div>
@@ -111,7 +172,7 @@
               <div class="metric-icon-box">👥</div>
             </div>
             <div class="metric-value" id="kpi-customers-count">0</div>
-            <div class="metric-sub">Across 5 Primary Branches</div>
+            <div class="metric-sub" id="kpi-customers-sub">Across 0 Branches</div>
           </div>
 
           <div class="metric-card" style="--accent-color: #f59e0b;">
@@ -133,9 +194,7 @@
           </div>
         </div>
 
-        <!-- Quick Actions & Overview -->
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 28px;">
-          <!-- Recent Transactions -->
           <div class="glass-panel" style="margin-bottom: 0;">
             <div class="panel-header">
               <div class="panel-title">
@@ -150,7 +209,7 @@
                   <tr>
                     <th>Ref ID</th>
                     <th>Account & Customer</th>
-                    <th>Category</th>
+                    <th>Operator</th>
                     <th>Type</th>
                     <th>Amount</th>
                     <th>Running Bal</th>
@@ -163,41 +222,36 @@
             </div>
           </div>
 
-          <!-- Account Distribution & Quick Controls -->
           <div style="display: flex; flex-direction: column; gap: 20px;">
             <div class="glass-panel" style="margin-bottom: 0;">
               <div class="panel-header">
-                <div class="panel-title">Quick Operations</div>
+                <div class="panel-title">Quick Operations (Role-Scoped)</div>
               </div>
-              <div style="padding: 20px; display: flex; flex-direction: column; gap: 12px;">
-                <button class="btn btn-primary" onclick="openDepositWithdrawModal('deposit')">
+              <div style="padding: 20px; display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn btn-primary" data-perm="can_transact" onclick="openDepositWithdrawModal('deposit')">
                   + Cash / Cheque Deposit
                 </button>
-                <button class="btn btn-secondary" onclick="openDepositWithdrawModal('withdraw')">
+                <button class="btn btn-secondary" data-perm="can_transact" onclick="openDepositWithdrawModal('withdraw')">
                   - ATM / Cash Withdrawal
                 </button>
-                <button class="btn btn-indigo" onclick="openAccountModal()">
+                <button class="btn btn-indigo" data-perm="can_manage_accounts" onclick="openAccountModal()">
                   + Open New Bank Account
                 </button>
-                <button class="btn btn-secondary" onclick="openCustomerModal()">
+                <button class="btn btn-secondary" data-perm="can_manage_customers" onclick="openCustomerModal()">
                   + Register Customer Profile
                 </button>
               </div>
             </div>
 
-            <!-- Account breakdown -->
             <div class="glass-panel" style="margin-bottom: 0; flex: 1;">
               <div class="panel-header">
                 <div class="panel-title">Portfolio Distribution</div>
               </div>
-              <div id="account-type-distribution" style="padding: 20px; display: flex; flex-direction: column; gap: 12px;">
-                <!-- Filled dynamically -->
-              </div>
+              <div id="account-type-distribution" style="padding: 20px; display: flex; flex-direction: column; gap: 12px;"></div>
             </div>
           </div>
         </div>
 
-        <!-- Branch Performance -->
         <div class="glass-panel">
           <div class="panel-header">
             <div class="panel-title">Branch Network Infrastructure</div>
@@ -207,9 +261,10 @@
               <thead>
                 <tr>
                   <th>Branch Code</th>
+                  <th>Bank</th>
                   <th>Branch Name</th>
                   <th>Staff Headcount</th>
-                  <th>Customer Accounts Managed</th>
+                  <th>Accounts Managed</th>
                 </tr>
               </thead>
               <tbody id="dashboard-branches-table"></tbody>
@@ -225,7 +280,7 @@
             <div class="panel-title">Customer Directory</div>
             <div class="panel-actions">
               <input type="text" id="customer-search-input" class="form-control" placeholder="Search by name, ID, email..." style="width: 260px;" oninput="fetchCustomers()">
-              <button class="btn btn-primary btn-sm" onclick="openCustomerModal()">+ Register Customer</button>
+              <button class="btn btn-primary btn-sm" data-perm="can_manage_customers" onclick="openCustomerModal()">+ Register Customer</button>
             </div>
           </div>
           <div class="table-responsive">
@@ -233,6 +288,7 @@
               <thead>
                 <tr>
                   <th>Customer ID</th>
+                  <th>Bank</th>
                   <th>Full Name</th>
                   <th>Contact Info</th>
                   <th>Credit Score</th>
@@ -243,7 +299,7 @@
                 </tr>
               </thead>
               <tbody id="customers-table-body">
-                <tr><td colspan="8" style="text-align:center; padding: 30px;">Loading customer records...</td></tr>
+                <tr><td colspan="9" style="text-align:center; padding: 30px;">Loading customer records...</td></tr>
               </tbody>
             </table>
           </div>
@@ -257,9 +313,9 @@
             <div class="panel-title">Core Accounts Ledger</div>
             <div class="panel-actions">
               <input type="text" id="account-search-input" class="form-control" placeholder="Search account number or holder..." style="width: 260px;" oninput="fetchAccounts()">
-              <button class="btn btn-secondary btn-sm" onclick="openDepositWithdrawModal('deposit')">Deposit / Withdraw</button>
-              <button class="btn btn-indigo btn-sm" onclick="openTransferModal()">Transfer</button>
-              <button class="btn btn-primary btn-sm" onclick="openAccountModal()">+ New Account</button>
+              <button class="btn btn-secondary btn-sm" data-perm="can_transact" onclick="openDepositWithdrawModal('deposit')">Deposit / Withdraw</button>
+              <button class="btn btn-indigo btn-sm" data-perm="can_transact" onclick="openTransferModal()">Transfer</button>
+              <button class="btn btn-primary btn-sm" data-perm="can_manage_accounts" onclick="openAccountModal()">+ New Account</button>
             </div>
           </div>
           <div class="table-responsive">
@@ -267,6 +323,7 @@
               <thead>
                 <tr>
                   <th>Account No</th>
+                  <th>Bank</th>
                   <th>Customer</th>
                   <th>Type</th>
                   <th>Balance</th>
@@ -277,7 +334,7 @@
                 </tr>
               </thead>
               <tbody id="accounts-table-body">
-                <tr><td colspan="8" style="text-align:center; padding: 30px;">Loading accounts...</td></tr>
+                <tr><td colspan="9" style="text-align:center; padding: 30px;">Loading accounts...</td></tr>
               </tbody>
             </table>
           </div>
@@ -295,7 +352,7 @@
                 <option value="credit">Credits (Income)</option>
                 <option value="debit">Debits (Expense)</option>
               </select>
-              <button class="btn btn-primary btn-sm" onclick="openTransferModal()">New Transaction</button>
+              <button class="btn btn-primary btn-sm" data-perm="can_transact" onclick="openTransferModal()">New Transaction</button>
             </div>
           </div>
           <div class="table-responsive">
@@ -303,8 +360,10 @@
               <thead>
                 <tr>
                   <th>Transaction Ref</th>
+                  <th>Bank</th>
                   <th>Account Number</th>
                   <th>Customer</th>
+                  <th>Operator</th>
                   <th>Category</th>
                   <th>Type</th>
                   <th>Amount</th>
@@ -314,7 +373,7 @@
                 </tr>
               </thead>
               <tbody id="transactions-table-body">
-                <tr><td colspan="9" style="text-align:center; padding: 30px;">Loading transactions...</td></tr>
+                <tr><td colspan="11" style="text-align:center; padding: 30px;">Loading transactions...</td></tr>
               </tbody>
             </table>
           </div>
@@ -328,12 +387,10 @@
             <h2 style="font-size: 18px; font-weight: 700;">Payment Cards Portfolio</h2>
             <p style="font-size: 13px; color: var(--text-muted);">Debit, Credit, and Prepaid cards linked to banking accounts</p>
           </div>
-          <button class="btn btn-primary" onclick="openCardModal()">+ Issue New Card</button>
+          <button class="btn btn-primary" data-perm="can_manage_cards" onclick="openCardModal()">+ Issue New Card</button>
         </div>
 
-        <div class="card-preview-grid" id="cards-container">
-          <!-- Cards rendered dynamically -->
-        </div>
+        <div class="card-preview-grid" id="cards-container"></div>
       </section>
 
       <!-- 6. LOANS TAB -->
@@ -342,8 +399,8 @@
           <div class="panel-header">
             <div class="panel-title">Credit & Lending Facilities</div>
             <div class="panel-actions">
-              <button class="btn btn-secondary btn-sm" onclick="openRepayLoanModal()">Repay Loan Installment</button>
-              <button class="btn btn-primary btn-sm" onclick="openLoanModal()">+ Sanction New Loan</button>
+              <button class="btn btn-secondary btn-sm" data-perm="can_repay_loans" onclick="openRepayLoanModal()">Repay Loan Installment</button>
+              <button class="btn btn-primary btn-sm" data-perm="can_sanction_loans" onclick="openLoanModal()">+ Sanction New Loan</button>
             </div>
           </div>
           <div class="table-responsive">
@@ -351,6 +408,7 @@
               <thead>
                 <tr>
                   <th>Loan No</th>
+                  <th>Bank</th>
                   <th>Customer</th>
                   <th>Category</th>
                   <th>Principal</th>
@@ -358,12 +416,13 @@
                   <th>Term</th>
                   <th>Monthly EMI</th>
                   <th>Outstanding</th>
+                  <th>Approved By</th>
                   <th>Status</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody id="loans-table-body">
-                <tr><td colspan="10" style="text-align:center; padding: 30px;">Loading credit facilities...</td></tr>
+                <tr><td colspan="12" style="text-align:center; padding: 30px;">Loading credit facilities...</td></tr>
               </tbody>
             </table>
           </div>
@@ -375,6 +434,9 @@
         <div class="glass-panel">
           <div class="panel-header">
             <div class="panel-title">Branch Network</div>
+            <div class="panel-actions">
+              <button class="btn btn-primary btn-sm" data-perm="can_manage_staff" onclick="openBranchModal()">+ Add Branch</button>
+            </div>
           </div>
           <div class="table-responsive">
             <table class="data-table">
@@ -382,7 +444,7 @@
                 <tr>
                   <th>Branch Code</th>
                   <th>Branch Name</th>
-                  <th>Parent Institution</th>
+                  <th>Parent Bank</th>
                   <th>Address</th>
                   <th>Phone</th>
                   <th>Branch Manager</th>
@@ -398,18 +460,21 @@
         <div class="glass-panel">
           <div class="panel-header">
             <div class="panel-title">Banking Personnel & Relationship Managers</div>
+            <div class="panel-actions">
+              <button class="btn btn-primary btn-sm" data-perm="can_manage_staff" onclick="openEmployeeModal()">+ Add Staff & Operator</button>
+            </div>
           </div>
           <div class="table-responsive">
             <table class="data-table">
               <thead>
                 <tr>
                   <th>Emp ID</th>
+                  <th>Bank</th>
                   <th>Full Name</th>
                   <th>Department</th>
                   <th>Position</th>
                   <th>Branch</th>
-                  <th>Email</th>
-                  <th>Phone</th>
+                  <th>DB Operator / Role</th>
                   <th>Monthly Salary</th>
                 </tr>
               </thead>
@@ -419,7 +484,140 @@
         </div>
       </section>
 
-      <!-- 8. SQL QUERY STUDIO TAB -->
+      <!-- 8. MULTI-BANK REGISTRY TAB -->
+      <section id="tab-banks" class="tab-pane">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div class="panel-title">Onboarded Banks (Multi-Tenant Registry)</div>
+            <div class="panel-actions">
+              <button class="btn btn-secondary btn-sm" data-perm="can_manage_staff" onclick="openAccountTypeModal()">+ Custom Account Product</button>
+              <button class="btn btn-primary btn-sm" data-perm="can_manage_banks" onclick="openCompanyModal()">+ Onboard New Bank</button>
+            </div>
+          </div>
+          <div class="bank-cards-grid" id="banks-grid"></div>
+        </div>
+
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div class="panel-title">Configured Account Products (Global & Bank-Specific)</div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Scope</th>
+                  <th>Product Name</th>
+                  <th>Min Balance</th>
+                  <th>Interest Rate</th>
+                  <th>Overdraft</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody id="account-types-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. ACCESS CONTROL & AUDIT TAB -->
+      <section id="tab-rbac-audit" class="tab-pane">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div class="panel-title">Role-Based Access Control (RBAC) Matrix</div>
+            <span style="font-size:12px; color:var(--text-muted);">Supports non-manager operators with principle of least privilege</span>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Role</th>
+                  <th>Level</th>
+                  <th>Banks</th>
+                  <th>Staff</th>
+                  <th>Customers</th>
+                  <th>Accounts</th>
+                  <th>Freeze</th>
+                  <th>Transact</th>
+                  <th>Cards</th>
+                  <th>Loans</th>
+                  <th>Repay</th>
+                  <th>SQL R</th>
+                  <th>SQL W</th>
+                  <th>Audit</th>
+                </tr>
+              </thead>
+              <tbody id="rbac-matrix-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div class="panel-title">Database Operators (Manager & Non-Manager Accounts)</div>
+            <div class="panel-actions">
+              <button class="btn btn-primary btn-sm" data-perm="can_manage_staff" onclick="openOperatorModal()">+ Provision Operator</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Op ID</th>
+                  <th>Username</th>
+                  <th>Full Name</th>
+                  <th>Role</th>
+                  <th>Bank Scope</th>
+                  <th>Branch</th>
+                  <th>Status</th>
+                  <th>Last Login</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="operators-table-body">
+                <tr><td colspan="9" style="text-align:center; padding:24px; color:var(--text-muted);">Requires staff management or audit permission</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div class="panel-title">Database Operations Audit Trail</div>
+            <div class="panel-actions">
+              <select id="audit-status-filter" class="form-control" style="width: 150px;" onchange="fetchAuditLogs()">
+                <option value="">All Statuses</option>
+                <option value="SUCCESS">SUCCESS</option>
+                <option value="DENIED">DENIED (Blocked)</option>
+                <option value="ERROR">ERROR</option>
+              </select>
+              <button class="btn btn-secondary btn-sm" onclick="fetchAuditLogs()">Refresh</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Log ID</th>
+                  <th>Operator</th>
+                  <th>Role</th>
+                  <th>Bank</th>
+                  <th>Action</th>
+                  <th>Target</th>
+                  <th>Status</th>
+                  <th>Details</th>
+                  <th>Timestamp</th>
+                </tr>
+              </thead>
+              <tbody id="audit-logs-body">
+                <tr><td colspan="9" style="text-align:center; padding:24px; color:var(--text-muted);">Requires audit permission (Manager / Bank Admin / Auditor / Super Admin)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 10. SQL QUERY STUDIO TAB -->
       <section id="tab-sql-studio" class="tab-pane">
         <div class="glass-panel">
           <div class="panel-header">
@@ -428,33 +626,38 @@
               Interactive SQL Console
             </div>
             <div class="panel-actions">
-              <button class="btn btn-primary btn-sm" onclick="executeSQLQuery()">
+              <span id="sql-mode-badge" class="role-chip">Read-Only Guard</span>
+              <button class="btn btn-primary btn-sm" data-perm="can_run_sql_read" onclick="executeSQLQuery()">
                 ▶ Run Query
               </button>
             </div>
           </div>
 
           <div style="padding: 20px;">
-            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">PRESET REPORT QUERIES (DTU CS209 DBMS Spec):</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">PRESET REPORT QUERIES (DTU CS209 Multi-Bank Spec):</div>
             <div class="sql-presets">
-              <span class="preset-chip" onclick="setPresetQuery(1)">Record count per table (Union query from slide 16)</span>
-              <span class="preset-chip" onclick="setPresetQuery(2)">Top account balances with customer profiles</span>
-              <span class="preset-chip" onclick="setPresetQuery(3)">Branch-wise total assets and employee count</span>
+              <span class="preset-chip" onclick="setPresetQuery(1)">Record count across all 13 tables</span>
+              <span class="preset-chip" onclick="setPresetQuery(2)">Top account balances with customer & bank</span>
+              <span class="preset-chip" onclick="setPresetQuery(3)">Bank & branch payroll summary</span>
               <span class="preset-chip" onclick="setPresetQuery(4)">Outstanding loan balances by loan type</span>
-              <span class="preset-chip" onclick="setPresetQuery(5)">Active credit cards with limit > ₹100,000</span>
-              <span class="preset-chip" onclick="setPresetQuery(6)">Recent high-value transactions (> ₹50,000)</span>
+              <span class="preset-chip" onclick="setPresetQuery(5)">Active credit cards with limit ≥ ₹100,000</span>
+              <span class="preset-chip" onclick="setPresetQuery(6)">Recent operator audit & transaction trail</span>
             </div>
 
             <div class="sql-terminal-box">
               <div class="sql-editor-header">
-                <span style="font-family: var(--font-mono); font-size: 12px; color: #8b949e;">Query Editor (SQLite 3 Standard Engine)</span>
+                <span style="font-family: var(--font-mono); font-size: 12px; color: #8b949e;">Query Editor (SQLite 3 with C-level set_authorizer Guard)</span>
                 <span id="query-timer" style="font-family: var(--font-mono); font-size: 11px; color: var(--accent-primary);">Ready</span>
               </div>
               <textarea id="sql-input" class="sql-textarea" spellcheck="false">SELECT 'companies' AS table_name, COUNT(*) AS record_count FROM companies
 UNION ALL
+SELECT 'roles', COUNT(*) FROM roles
+UNION ALL
 SELECT 'branches', COUNT(*) FROM branches
 UNION ALL
 SELECT 'employees', COUNT(*) FROM employees
+UNION ALL
+SELECT 'operators', COUNT(*) FROM operators
 UNION ALL
 SELECT 'customers', COUNT(*) FROM customers
 UNION ALL
@@ -468,7 +671,9 @@ SELECT 'transactions', COUNT(*) FROM transactions
 UNION ALL
 SELECT 'loans', COUNT(*) FROM loans
 UNION ALL
-SELECT 'cards', COUNT(*) FROM cards;</textarea>
+SELECT 'cards', COUNT(*) FROM cards
+UNION ALL
+SELECT 'audit_logs', COUNT(*) FROM audit_logs;</textarea>
             </div>
 
             <div id="sql-results-container" class="table-responsive" style="max-height: 400px; border: 1px solid var(--border-color); border-radius: var(--radius-md); display: none;">
@@ -482,157 +687,128 @@ SELECT 'cards', COUNT(*) FROM cards;</textarea>
         </div>
       </section>
 
-      <!-- 9. SCHEMA & ER DIAGRAM TAB -->
+      <!-- 11. SCHEMA & ER DIAGRAM TAB -->
       <section id="tab-schema-view" class="tab-pane">
         <div class="glass-panel">
           <div class="panel-header">
             <div class="panel-title">Relational Entity-Relationship (ER) Schema</div>
-            <span style="font-size: 12px; color: var(--accent-primary);">10 Tables • Normalized 3NF Schema</span>
+            <span style="font-size: 12px; color: var(--accent-primary);">13 Tables • Multi-Tenant 3NF + RBAC Schema</span>
           </div>
           <div class="er-container">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px;">
-              
-              <!-- companies -->
+
               <div class="er-table-card">
-                <div class="er-table-header">
-                  <span>companies</span>
-                  <span>Parent Entity</span>
-                </div>
+                <div class="er-table-header"><span>companies</span><span>Multi-Bank Tenant</span></div>
                 <div class="er-field"><span class="er-pk">🔑 company_code</span><span>VARCHAR(10)</span></div>
                 <div class="er-field"><span>company_name</span><span>VARCHAR(100)</span></div>
-                <div class="er-field"><span>headquarters_address</span><span>TEXT</span></div>
-                <div class="er-field"><span>phone</span><span>VARCHAR(20)</span></div>
-                <div class="er-field"><span>established_date</span><span>DATE</span></div>
+                <div class="er-field"><span>short_code, swift_code</span><span>VARCHAR</span></div>
+                <div class="er-field"><span>currency_code, symbol</span><span>VARCHAR</span></div>
+                <div class="er-field"><span>brand_color, status</span><span>VARCHAR</span></div>
                 <div class="er-field"><span>total_assets</span><span>DECIMAL(15,2)</span></div>
-                <div class="er-field"><span>created_at</span><span>TIMESTAMP</span></div>
               </div>
 
-              <!-- branches -->
               <div class="er-table-card">
-                <div class="er-table-header">
-                  <span>branches</span>
-                  <span>Branch Network</span>
-                </div>
+                <div class="er-table-header"><span>roles</span><span>RBAC Policy</span></div>
+                <div class="er-field"><span class="er-pk">🔑 role_code</span><span>VARCHAR(20)</span></div>
+                <div class="er-field"><span>role_name</span><span>VARCHAR(60)</span></div>
+                <div class="er-field"><span>hierarchy_level</span><span>INT</span></div>
+                <div class="er-field"><span>can_manage_banks/staff</span><span>TINYINT</span></div>
+                <div class="er-field"><span>can_transact/loans/cards</span><span>TINYINT</span></div>
+                <div class="er-field"><span>can_run_sql_read/write</span><span>TINYINT</span></div>
+              </div>
+
+              <div class="er-table-card">
+                <div class="er-table-header"><span>operators</span><span>DB Access Actors</span></div>
+                <div class="er-field"><span class="er-pk">🔑 operator_id</span><span>VARCHAR(12)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 employee_id</span><span>VARCHAR(10)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 company_code</span><span>VARCHAR(10)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 role_code</span><span>VARCHAR(20)</span></div>
+                <div class="er-field"><span>username (UNIQUE)</span><span>VARCHAR(50)</span></div>
+                <div class="er-field"><span>password_hash</span><span>PBKDF2</span></div>
+              </div>
+
+              <div class="er-table-card">
+                <div class="er-table-header"><span>branches</span><span>Branch Network</span></div>
                 <div class="er-field"><span class="er-pk">🔑 branch_code</span><span>VARCHAR(15)</span></div>
                 <div class="er-field"><span class="er-fk">🔗 company_code</span><span>VARCHAR(10)</span></div>
                 <div class="er-field"><span>branch_name</span><span>VARCHAR(100)</span></div>
-                <div class="er-field"><span>address</span><span>TEXT</span></div>
                 <div class="er-field"><span>manager_name</span><span>VARCHAR(100)</span></div>
-                <div class="er-field"><span>opening_hours</span><span>TIME</span></div>
-                <div class="er-field"><span>closing_hours</span><span>TIME</span></div>
+                <div class="er-field"><span>opening/closing_hours</span><span>TIME</span></div>
               </div>
 
-              <!-- employees -->
               <div class="er-table-card">
-                <div class="er-table-header">
-                  <span>employees</span>
-                  <span>Bank Staff</span>
-                </div>
+                <div class="er-table-header"><span>employees</span><span>Bank Staff</span></div>
                 <div class="er-field"><span class="er-pk">🔑 employee_id</span><span>VARCHAR(10)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 company_code</span><span>VARCHAR(10)</span></div>
                 <div class="er-field"><span class="er-fk">🔗 branch_code</span><span>VARCHAR(15)</span></div>
                 <div class="er-field"><span>first_name, last_name</span><span>VARCHAR(50)</span></div>
-                <div class="er-field"><span>email (UNIQUE)</span><span>VARCHAR(100)</span></div>
-                <div class="er-field"><span>position</span><span>VARCHAR(50)</span></div>
-                <div class="er-field"><span>salary</span><span>DECIMAL(10,2)</span></div>
-                <div class="er-field"><span>department</span><span>VARCHAR(50)</span></div>
+                <div class="er-field"><span>position, department</span><span>VARCHAR(50)</span></div>
               </div>
 
-              <!-- account_types -->
               <div class="er-table-card">
-                <div class="er-table-header">
-                  <span>account_types</span>
-                  <span>Product Metadata</span>
-                </div>
+                <div class="er-table-header"><span>account_types</span><span>Product Catalog</span></div>
                 <div class="er-field"><span class="er-pk">🔑 account_type_code</span><span>VARCHAR(10)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 company_code (opt)</span><span>VARCHAR(10)</span></div>
                 <div class="er-field"><span>type_name</span><span>VARCHAR(50)</span></div>
-                <div class="er-field"><span>minimum_balance</span><span>DECIMAL(10,2)</span></div>
-                <div class="er-field"><span>interest_rate</span><span>DECIMAL(5,4)</span></div>
-                <div class="er-field"><span>allows_overdraft</span><span>TINYINT(1)</span></div>
+                <div class="er-field"><span>minimum_balance, rate</span><span>DECIMAL</span></div>
               </div>
 
-              <!-- customers -->
               <div class="er-table-card">
-                <div class="er-table-header">
-                  <span>customers</span>
-                  <span>Primary Actors</span>
-                </div>
+                <div class="er-table-header"><span>customers</span><span>Client Profiles</span></div>
                 <div class="er-field"><span class="er-pk">🔑 customer_id</span><span>VARCHAR(10)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 company_code, branch</span><span>VARCHAR</span></div>
                 <div class="er-field"><span class="er-fk">🔗 relationship_manager_id</span><span>VARCHAR(10)</span></div>
-                <div class="er-field"><span>first_name, last_name</span><span>VARCHAR(50)</span></div>
-                <div class="er-field"><span>email (UNIQUE)</span><span>VARCHAR(100)</span></div>
-                <div class="er-field"><span>id_number (UNIQUE)</span><span>VARCHAR(50)</span></div>
-                <div class="er-field"><span>credit_score</span><span>DECIMAL(4,0)</span></div>
-                <div class="er-field"><span>registration_date</span><span>DATE</span></div>
+                <div class="er-field"><span class="er-fk">🔗 created_by_operator_id</span><span>VARCHAR(12)</span></div>
+                <div class="er-field"><span>credit_score, id_number</span><span>DECIMAL/STR</span></div>
               </div>
 
-              <!-- accounts -->
               <div class="er-table-card">
-                <div class="er-table-header">
-                  <span>accounts</span>
-                  <span>Core Accounts</span>
-                </div>
+                <div class="er-table-header"><span>accounts</span><span>Core Accounts</span></div>
                 <div class="er-field"><span class="er-pk">🔑 account_number</span><span>VARCHAR(20)</span></div>
-                <div class="er-field"><span class="er-fk">🔗 customer_id</span><span>VARCHAR(10)</span></div>
-                <div class="er-field"><span class="er-fk">🔗 account_type_code</span><span>VARCHAR(10)</span></div>
-                <div class="er-field"><span>balance</span><span>DECIMAL(15,2)</span></div>
-                <div class="er-field"><span>status</span><span>ENUM(active...)</span></div>
-                <div class="er-field"><span>overdraft_limit</span><span>DECIMAL(10,2)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 company_code</span><span>VARCHAR(10)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 customer_id, type</span><span>VARCHAR</span></div>
+                <div class="er-field"><span class="er-fk">🔗 opened_by_operator_id</span><span>VARCHAR(12)</span></div>
+                <div class="er-field"><span>balance, status</span><span>DECIMAL/ENUM</span></div>
               </div>
 
-              <!-- transactions -->
               <div class="er-table-card">
-                <div class="er-table-header">
-                  <span>transactions</span>
-                  <span>Financial Ledger</span>
-                </div>
+                <div class="er-table-header"><span>transactions</span><span>Financial Ledger</span></div>
                 <div class="er-field"><span class="er-pk">🔑 transaction_reference</span><span>VARCHAR(20)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 company_code</span><span>VARCHAR(10)</span></div>
                 <div class="er-field"><span class="er-fk">🔗 account_number</span><span>VARCHAR(20)</span></div>
-                <div class="er-field"><span class="er-fk">🔗 category_code</span><span>VARCHAR(10)</span></div>
-                <div class="er-field"><span>transaction_type</span><span>ENUM(credit, debit)</span></div>
-                <div class="er-field"><span>amount</span><span>DECIMAL(15,2)</span></div>
-                <div class="er-field"><span>running_balance</span><span>DECIMAL(15,2)</span></div>
-                <div class="er-field"><span>transaction_date</span><span>DATETIME</span></div>
+                <div class="er-field"><span class="er-fk">🔗 performed_by_operator_id</span><span>VARCHAR(12)</span></div>
+                <div class="er-field"><span>amount, running_balance</span><span>DECIMAL(15,2)</span></div>
               </div>
 
-              <!-- cards -->
               <div class="er-table-card">
-                <div class="er-table-header">
-                  <span>cards</span>
-                  <span>Payment Instruments</span>
-                </div>
+                <div class="er-table-header"><span>cards</span><span>Payment Cards</span></div>
                 <div class="er-field"><span class="er-pk">🔑 card_id</span><span>VARCHAR(20)</span></div>
-                <div class="er-field"><span class="er-fk">🔗 customer_id</span><span>VARCHAR(10)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 company_code, customer_id</span><span>VARCHAR</span></div>
                 <div class="er-field"><span class="er-fk">🔗 linked_account_number</span><span>VARCHAR(20)</span></div>
-                <div class="er-field"><span>card_number_masked</span><span>VARCHAR(255)</span></div>
-                <div class="er-field"><span>card_type</span><span>ENUM(debit/credit)</span></div>
-                <div class="er-field"><span>expiry_date</span><span>DATE</span></div>
-                <div class="er-field"><span>credit_limit</span><span>DECIMAL(10,2)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 issued_by_operator_id</span><span>VARCHAR(12)</span></div>
               </div>
 
-              <!-- loans -->
               <div class="er-table-card">
-                <div class="er-table-header">
-                  <span>loans</span>
-                  <span>Credit Liabilities</span>
-                </div>
+                <div class="er-table-header"><span>loans</span><span>Credit Facilities</span></div>
                 <div class="er-field"><span class="er-pk">🔑 loan_number</span><span>VARCHAR(20)</span></div>
-                <div class="er-field"><span class="er-fk">🔗 customer_id</span><span>VARCHAR(10)</span></div>
-                <div class="er-field"><span>loan_type</span><span>ENUM(...)</span></div>
-                <div class="er-field"><span>principal_amount</span><span>DECIMAL(15,2)</span></div>
-                <div class="er-field"><span>monthly_payment</span><span>DECIMAL(10,2)</span></div>
-                <div class="er-field"><span>outstanding_balance</span><span>DECIMAL(15,2)</span></div>
-                <div class="er-field"><span>status</span><span>ENUM(running...)</span></div>
+                <div class="er-field"><span class="er-fk">🔗 company_code, customer_id</span><span>VARCHAR</span></div>
+                <div class="er-field"><span class="er-fk">🔗 approved_by_operator_id</span><span>VARCHAR(12)</span></div>
+                <div class="er-field"><span>principal, outstanding</span><span>DECIMAL(15,2)</span></div>
               </div>
 
-              <!-- transaction_categories -->
               <div class="er-table-card">
-                <div class="er-table-header">
-                  <span>transaction_categories</span>
-                  <span>Taxonomy</span>
-                </div>
+                <div class="er-table-header"><span>transaction_categories</span><span>Taxonomy</span></div>
                 <div class="er-field"><span class="er-pk">🔑 category_code</span><span>VARCHAR(10)</span></div>
                 <div class="er-field"><span>category_name</span><span>VARCHAR(50)</span></div>
-                <div class="er-field"><span>category_type</span><span>ENUM(income, expense)</span></div>
+                <div class="er-field"><span>category_type</span><span>ENUM</span></div>
+              </div>
+
+              <div class="er-table-card">
+                <div class="er-table-header"><span>audit_logs</span><span>Accountability</span></div>
+                <div class="er-field"><span class="er-pk">🔑 log_id</span><span>INTEGER AI</span></div>
+                <div class="er-field"><span class="er-fk">🔗 operator_id, company</span><span>VARCHAR</span></div>
+                <div class="er-field"><span>action, target_table, id</span><span>VARCHAR</span></div>
+                <div class="er-field"><span>status (SUCCESS/DENIED)</span><span>ENUM</span></div>
               </div>
 
             </div>
@@ -649,7 +825,7 @@ SELECT 'cards', COUNT(*) FROM cards;</textarea>
   <div class="modal-overlay" id="modal-transfer">
     <div class="modal-box">
       <div class="modal-header">
-        <h3 class="modal-title">Instant Fund Transfer (Double-Entry Atomic Transaction)</h3>
+        <h3 class="modal-title">Instant Fund Transfer (Atomic Double-Entry)</h3>
         <button class="modal-close" onclick="closeModal('modal-transfer')">&times;</button>
       </div>
       <div class="modal-body">
@@ -658,11 +834,11 @@ SELECT 'cards', COUNT(*) FROM cards;</textarea>
           <select id="transfer-src-account" class="form-control"></select>
         </div>
         <div class="form-group">
-          <label class="form-label">Destination Account (Credited)</label>
+          <label class="form-label">Destination Account (Same-Bank or Inter-Bank)</label>
           <select id="transfer-dst-account" class="form-control"></select>
         </div>
         <div class="form-group">
-          <label class="form-label">Transfer Amount (INR ₹)</label>
+          <label class="form-label">Transfer Amount</label>
           <input type="number" id="transfer-amount" class="form-control" placeholder="e.g. 5000" min="1" step="0.01">
         </div>
         <div class="form-group">
@@ -691,7 +867,7 @@ SELECT 'cards', COUNT(*) FROM cards;</textarea>
           <select id="dw-account" class="form-control"></select>
         </div>
         <div class="form-group">
-          <label class="form-label">Amount (INR ₹)</label>
+          <label class="form-label">Amount</label>
           <input type="number" id="dw-amount" class="form-control" placeholder="e.g. 10000" min="1" step="0.01">
         </div>
         <div class="form-group">
@@ -728,11 +904,11 @@ SELECT 'cards', COUNT(*) FROM cards;</textarea>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Initial Deposit (₹)</label>
+            <label class="form-label">Initial Deposit</label>
             <input type="number" id="newacc-deposit" class="form-control" placeholder="0.00" value="5000">
           </div>
           <div class="form-group">
-            <label class="form-label">Overdraft Facility (₹)</label>
+            <label class="form-label">Overdraft Facility</label>
             <input type="number" id="newacc-overdraft" class="form-control" placeholder="0.00" value="0">
           </div>
         </div>
@@ -752,6 +928,10 @@ SELECT 'cards', COUNT(*) FROM cards;</textarea>
         <button class="modal-close" onclick="closeModal('modal-customer')">&times;</button>
       </div>
       <div class="modal-body">
+        <div class="form-group" id="cust-company-group">
+          <label class="form-label">Target Bank</label>
+          <select id="cust-company" class="form-control"></select>
+        </div>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">First Name *</label>
@@ -862,7 +1042,7 @@ SELECT 'cards', COUNT(*) FROM cards;</textarea>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Principal Amount (₹)</label>
+            <label class="form-label">Principal Amount</label>
             <input type="number" id="loan-principal" class="form-control" placeholder="500000" value="500000">
           </div>
         </div>
@@ -897,7 +1077,7 @@ SELECT 'cards', COUNT(*) FROM cards;</textarea>
           <select id="repay-loan-num" class="form-control"></select>
         </div>
         <div class="form-group">
-          <label class="form-label">Payment Amount (₹)</label>
+          <label class="form-label">Payment Amount</label>
           <input type="number" id="repay-loan-amount" class="form-control" placeholder="e.g. 15000" min="1" step="0.01">
         </div>
       </div>
@@ -915,11 +1095,293 @@ SELECT 'cards', COUNT(*) FROM cards;</textarea>
         <h3 class="modal-title" id="cust-detail-title">Customer Dossier</h3>
         <button class="modal-close" onclick="closeModal('modal-customer-detail')">&times;</button>
       </div>
-      <div class="modal-body" id="cust-detail-body">
-        <!-- Rendered dynamically -->
-      </div>
+      <div class="modal-body" id="cust-detail-body"></div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal('modal-customer-detail')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Onboard New Bank -->
+  <div class="modal-overlay" id="modal-company">
+    <div class="modal-box" style="max-width: 620px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Onboard New Bank Tenant</h3>
+        <button class="modal-close" onclick="closeModal('modal-company')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Bank Name *</label>
+            <input type="text" id="bank-name" class="form-control" placeholder="Apex Horizon Bank">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Short Code *</label>
+            <input type="text" id="bank-short" class="form-control" placeholder="AHB" maxlength="10">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Currency Code</label>
+            <input type="text" id="bank-curr-code" class="form-control" value="INR">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Currency Symbol</label>
+            <input type="text" id="bank-curr-sym" class="form-control" value="₹">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">SWIFT / BIC Code</label>
+            <input type="text" id="bank-swift" class="form-control" placeholder="AHBINBBXXX">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Theme Accent Color</label>
+            <input type="color" id="bank-color" class="form-control" value="#f59e0b" style="height:38px; padding:3px;">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">HQ Address</label>
+            <input type="text" id="bank-hq" class="form-control" placeholder="Connaught Place, New Delhi">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Total Assets</label>
+            <input type="number" id="bank-assets" class="form-control" value="1500000000">
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--border-color); margin:12px 0; padding-top:12px;">
+          <div style="font-size:12px; font-weight:700; color:var(--accent-primary); margin-bottom:10px;">AUTO-PROVISION INITIAL BRANCH & BANK ADMIN</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">HQ Branch Name</label>
+              <input type="text" id="bank-init-branch" class="form-control" placeholder="Main Headquarters">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Admin Full Name</label>
+              <input type="text" id="bank-admin-name" class="form-control" placeholder="Vikram Mehta">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Bank Admin Username</label>
+              <input type="text" id="bank-admin-user" class="form-control" placeholder="vikram.ahb">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Bank Admin Password</label>
+              <input type="password" id="bank-admin-pass" class="form-control" value="Bank@123">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-company')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitNewCompany()">Onboard Bank</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add Branch -->
+  <div class="modal-overlay" id="modal-branch">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Bank Branch</h3>
+        <button class="modal-close" onclick="closeModal('modal-branch')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Parent Bank *</label>
+          <select id="br-company" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Branch Name *</label>
+          <input type="text" id="br-name" class="form-control" placeholder="Cyber City Branch">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Branch Manager Name</label>
+            <input type="text" id="br-manager" class="form-control" placeholder="Neha Kapoor">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input type="text" id="br-phone" class="form-control" placeholder="+91-124-4001234">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Address</label>
+          <input type="text" id="br-address" class="form-control" placeholder="DLF Phase 2, Gurugram">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-branch')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitNewBranch()">Create Branch</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add Employee & Optional Operator -->
+  <div class="modal-overlay" id="modal-employee">
+    <div class="modal-box" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Staff Member & Database Operator</h3>
+        <button class="modal-close" onclick="closeModal('modal-employee')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Assigned Branch *</label>
+          <select id="emp-branch" class="form-control"></select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">First Name *</label>
+            <input type="text" id="emp-fname" class="form-control" placeholder="Rohan">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name *</label>
+            <input type="text" id="emp-lname" class="form-control" placeholder="Verma">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Email *</label>
+            <input type="email" id="emp-email" class="form-control" placeholder="rohan.v@bank.in">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input type="text" id="emp-phone" class="form-control" placeholder="+91-9811223344">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Position</label>
+            <input type="text" id="emp-position" class="form-control" value="Cash & Vault Teller">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Department</label>
+            <input type="text" id="emp-dept" class="form-control" value="Cash Management">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Monthly Salary</label>
+          <input type="number" id="emp-salary" class="form-control" value="65000">
+        </div>
+        <div style="border-top:1px solid var(--border-color); padding-top:12px; margin-top:10px;">
+          <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; margin-bottom:10px; cursor:pointer;">
+            <input type="checkbox" id="emp-create-op" checked onchange="document.getElementById('emp-op-fields').style.display = this.checked ? 'grid' : 'none'">
+            Provision DB Operator Access (Non-Manager / Role Login)
+          </label>
+          <div id="emp-op-fields" class="form-row">
+            <div class="form-group">
+              <label class="form-label">Username</label>
+              <input type="text" id="emp-op-user" class="form-control" placeholder="rohan.teller">
+            </div>
+            <div class="form-group">
+              <label class="form-label">DB Role</label>
+              <select id="emp-op-role" class="form-control"></select>
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label">Initial Password</label>
+              <input type="password" id="emp-op-pass" class="form-control" value="Bank@123">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-employee')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitNewEmployee()">Save Staff Member</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Provision Standalone / Employee Operator -->
+  <div class="modal-overlay" id="modal-operator">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">Provision Database Operator Account</h3>
+        <button class="modal-close" onclick="closeModal('modal-operator')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Bank Scope</label>
+          <select id="op-company" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <input type="text" id="op-fullname" class="form-control" placeholder="Kunal Verma">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Username *</label>
+            <input type="text" id="op-username" class="form-control" placeholder="kunal.teller">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password *</label>
+            <input type="password" id="op-password" class="form-control" value="Bank@123">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">RBAC Role *</label>
+            <select id="op-role" class="form-control"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Link Employee (Optional)</label>
+            <select id="op-employee" class="form-control"></select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-operator')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitNewOperator()">Provision Operator</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Custom Account Product -->
+  <div class="modal-overlay" id="modal-account-type">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Bank Account Product</h3>
+        <button class="modal-close" onclick="closeModal('modal-account-type')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Bank Scope (Specific Bank or Global)</label>
+          <select id="at-company" class="form-control"></select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Product Code *</label>
+            <input type="text" id="at-code" class="form-control" placeholder="NBI_NR" maxlength="10">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Product Name *</label>
+            <input type="text" id="at-name" class="form-control" placeholder="NRI Premium Savings">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Minimum Balance</label>
+            <input type="number" id="at-min" class="form-control" value="5000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Interest Rate (e.g. 0.045)</label>
+            <input type="number" id="at-rate" class="form-control" step="0.0001" value="0.045">
+          </div>
+        </div>
+        <div class="form-group">
+          <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+            <input type="checkbox" id="at-overdraft"> Allows Overdraft Facility
+          </label>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <input type="text" id="at-desc" class="form-control" placeholder="Bank-specific tiered savings product">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-account-type')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitNewAccountType()">Create Product</button>
       </div>
     </div>
   </div>
